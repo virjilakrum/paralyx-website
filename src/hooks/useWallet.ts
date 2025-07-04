@@ -4,6 +4,8 @@ interface WalletState {
   account: string | null;
   isConnected: boolean;
   isConnecting: boolean;
+  isSigned: boolean;
+  isSigning: boolean;
   error: string | null;
 }
 
@@ -28,74 +30,24 @@ export const useWallet = () => {
     account: null,
     isConnected: false,
     isConnecting: false,
+    isSigned: false,
+    isSigning: false,
     error: null,
   });
 
-  // localStorage'dan adresi yükle ve MetaMask durumunu kontrol et
+  // Otomatik cüzdan bağlama özelliği devre dışı bırakıldı
+  // Kullanıcılar sadece Connect butonuna tıklayarak bağlantı kurabilir
   useEffect(() => {
-    const initializeWallet = async () => {
-      // MetaMask'ın yüklenmesini bekle
-      if (!window.ethereum) {
-        // Kısa bir süre bekle ve tekrar kontrol et
-        setTimeout(() => {
-          if (!window.ethereum) return;
-          initializeWallet();
-        }, 100);
-        return;
-      }
-
+    // Sadece localStorage'daki eski verileri temizle
+    const cleanupOldData = () => {
       const savedAddress = localStorage.getItem(STORAGE_KEY);
-      console.log("💾 Saved address from localStorage:", savedAddress);
-
-      try {
-        // MetaMask'tan mevcut hesapları al
-        const accounts = await window.ethereum.request({
-          method: "eth_accounts",
-        });
-
-        if (accounts.length > 0) {
-          const currentAccount = accounts[0];
-          console.log("🔗 Wallet auto-connected:", currentAccount);
-          setWalletState((prev) => ({
-            ...prev,
-            account: currentAccount,
-            isConnected: true,
-            error: null,
-          }));
-          // localStorage'ı güncelle
-          localStorage.setItem(STORAGE_KEY, currentAccount);
-        } else {
-          // MetaMask'ta hesap yok, localStorage'ı temizle
-          console.log("❌ No accounts found, clearing localStorage");
-          if (savedAddress) {
-            localStorage.removeItem(STORAGE_KEY);
-          }
-          setWalletState((prev) => ({
-            ...prev,
-            account: null,
-            isConnected: false,
-            error: null,
-          }));
-        }
-      } catch (error) {
-        console.error("Error initializing wallet:", error);
-        // Hata durumunda localStorage'ı temizle
-        if (savedAddress) {
-          localStorage.removeItem(STORAGE_KEY);
-        }
-        setWalletState((prev) => ({
-          ...prev,
-          account: null,
-          isConnected: false,
-          error: null,
-        }));
+      if (savedAddress) {
+        console.log("🧹 Cleaning up old wallet data from localStorage");
+        localStorage.removeItem(STORAGE_KEY);
       }
     };
 
-    // Sayfa yüklendiğinde kısa bir gecikme ile başlat
-    const timer = setTimeout(initializeWallet, 100);
-
-    return () => clearTimeout(timer);
+    cleanupOldData();
   }, []);
 
   // Sayfa görünürlük değişikliklerini dinle (sekme değişimi)
@@ -170,6 +122,50 @@ export const useWallet = () => {
     };
   }, []);
 
+  const signMessage = useCallback(async (account: string) => {
+    if (!window.ethereum) return false;
+
+    setWalletState((prev) => ({
+      ...prev,
+      isSigning: true,
+      error: null,
+    }));
+
+    try {
+      const message = `Welcome to Paralyx Protocol!\n\nPlease sign this message to verify your wallet ownership.\n\nWallet: ${account}\nTime: ${new Date().toISOString()}`;
+      
+      const signature = await window.ethereum.request({
+        method: "personal_sign",
+        params: [message, account],
+      });
+
+      if (signature) {
+        setWalletState((prev) => ({
+          ...prev,
+          isSigned: true,
+          isSigning: false,
+          error: null,
+        }));
+        return true;
+      }
+      return false;
+    } catch (error: any) {
+      console.error("Error signing message:", error);
+      let errorMessage = "Failed to sign message";
+
+      if (error.code === 4001) {
+        errorMessage = "Signature rejected by user";
+      }
+
+      setWalletState((prev) => ({
+        ...prev,
+        isSigning: false,
+        error: errorMessage,
+      }));
+      return false;
+    }
+  }, []);
+
   const connect = useCallback(async () => {
     if (!window.ethereum) {
       setWalletState((prev) => ({
@@ -193,6 +189,8 @@ export const useWallet = () => {
 
       if (accounts.length > 0) {
         const account = accounts[0];
+        
+        // İlk önce cüzdan bağlantısını kaydet
         setWalletState((prev) => ({
           ...prev,
           account,
@@ -200,7 +198,22 @@ export const useWallet = () => {
           isConnecting: false,
           error: null,
         }));
-        localStorage.setItem(STORAGE_KEY, account);
+        
+        // Sonra sign işlemini iste
+        const signed = await signMessage(account);
+        
+        if (signed) {
+          localStorage.setItem(STORAGE_KEY, account);
+        } else {
+          // Sign edilmezse bağlantıyı kes
+          setWalletState((prev) => ({
+            ...prev,
+            account: null,
+            isConnected: false,
+            isSigned: false,
+            error: "Signature required for security",
+          }));
+        }
       }
     } catch (error: any) {
       console.error("Error connecting wallet:", error);
@@ -218,13 +231,15 @@ export const useWallet = () => {
         error: errorMessage,
       }));
     }
-  }, []);
+  }, [signMessage]);
 
   const disconnect = useCallback(() => {
     setWalletState({
       account: null,
       isConnected: false,
       isConnecting: false,
+      isSigned: false,
+      isSigning: false,
       error: null,
     });
     localStorage.removeItem(STORAGE_KEY);
@@ -238,6 +253,7 @@ export const useWallet = () => {
     ...walletState,
     connect,
     disconnect,
+    signMessage,
     formatAddress,
     isMetaMaskInstalled: !!window.ethereum?.isMetaMask,
   };

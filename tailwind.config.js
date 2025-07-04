@@ -48,6 +48,7 @@ module.exports = {
       },
       fontFamily: {
         sans: [
+          "AeonikTRIAL",
           "ui-sans-serif",
           "system-ui",
           "sans-serif",
@@ -56,6 +57,7 @@ module.exports = {
           '"Segoe UI Symbol"',
           '"Noto Color Emoji"',
         ],
+        'aeonik': ['AeonikTRIAL', 'sans-serif'],
       },
       keyframes: {
         "accordion-down": {
