@@ -136,5 +136,52 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden;
+  }
+
+  /* Ensure full viewport coverage for 3D background */
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    min-width: 100vw;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Force root element to be full screen */
+  #root {
+    width: 100vw;
+    height: 100vh;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Custom backdrop blur for Spline background */
+  .spline-backdrop {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* Prevent scrollbars when using fixed positioning */
+  .overflow-hidden {
+    overflow: hidden !important;
+  }
+
+  /* Force Spline to cover entire viewport */
+  canvas {
+    width: 100vw !important;
+    height: 100vh !important;
+    min-width: 100vw !important;
+    min-height: 100vh !important;
+    object-fit: cover !important;
+  }
+
+  /* Spline canvas positioning - centered */
+  .spline-centered canvas {
+    transform-origin: center center !important;
   }
 }
