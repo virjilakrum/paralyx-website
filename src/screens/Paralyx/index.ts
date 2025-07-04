@@ -1,0 +1,1 @@
+export { Paralyx } from "./Paralyx";
