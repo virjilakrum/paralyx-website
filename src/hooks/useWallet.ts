@@ -41,10 +41,10 @@ export const useWallet = () => {
     // Sadece localStorage'daki eski verileri temizle
     const cleanupOldData = () => {
       const savedAddress = localStorage.getItem(STORAGE_KEY);
-      if (savedAddress) {
+          if (savedAddress) {
         console.log("🧹 Cleaning up old wallet data from localStorage");
-        localStorage.removeItem(STORAGE_KEY);
-      }
+          localStorage.removeItem(STORAGE_KEY);
+        }
     };
 
     cleanupOldData();
@@ -203,7 +203,7 @@ export const useWallet = () => {
         const signed = await signMessage(account);
         
         if (signed) {
-          localStorage.setItem(STORAGE_KEY, account);
+        localStorage.setItem(STORAGE_KEY, account);
         } else {
           // Sign edilmezse bağlantıyı kes
           setWalletState((prev) => ({
