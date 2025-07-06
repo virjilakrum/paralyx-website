@@ -259,7 +259,7 @@ export const Paralyx = (): JSX.Element => {
             </div>
           )}
 
-          <div className="relative w-full max-w-[1384px] min-h-[1800px] mx-auto bg-[url(/mask.png)] bg-[100%_100%] bg-opacity-20">
+          <div className="relative w-full min-h-[1800px] bg-[url(/mask.png)] bg-[100%_100%] bg-opacity-20">
             {/* Navigation Bar */}
             <Card className="absolute w-[499px] h-[68px] top-[20px] left-1/2 transform -translate-x-1/2 bg-[#eeccf0] bg-opacity-90 backdrop-blur-sm rounded border border-solid border-black shadow-lg">
               <div className="flex h-full items-center justify-center px-[55px]">
